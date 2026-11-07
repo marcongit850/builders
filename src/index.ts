@@ -32,6 +32,8 @@ function isPreviewAsset(pathname: string): boolean {
     pathname === "/index.html" ||
     pathname === "/join" ||
     pathname === "/join.html" ||
+    pathname === "/login" ||
+    pathname === "/login.html" ||
     pathname === "/styles.css" ||
     pathname.startsWith("/fonts/") ||
     pathname.startsWith("/assets/")
@@ -79,6 +81,14 @@ function documentPage(
           <img class="brand-mark" src="/assets/walton-county-builders-network-logo.jpg" alt="" width="1024" height="1024">
           <span class="brand-name"><span>Walton County</span>Builders Network</span>
         </a>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="/#about">About</a>
+          <a href="/#issues">Issues</a>
+          <a href="#">News</a>
+          <a href="#">Calendar</a>
+          <a class="nav-login" href="/login">Login</a>
+          <a class="button" href="/join">Join the mission</a>
+        </nav>
       </div>
     </header>
     <main class="notice">
@@ -88,6 +98,32 @@ function documentPage(
         <a class="text-link" href="${escapeHtml(linkHref)}">${escapeHtml(linkLabel)}</a>
       </div>
     </main>
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-top">
+          <p class="closing">A Unified Voice. A Stronger Industry. A Better Walton County.</p>
+          <button class="button" type="button" popovertarget="contact-dialog">Contact us</button>
+        </div>
+        <div class="footer-bottom">
+          <span>Walton County Builders Network · Walton County, Florida</span>
+        </div>
+      </div>
+    </footer>
+    <div id="contact-dialog" class="contact-dialog" popover="auto" role="dialog" aria-labelledby="contact-heading">
+      <div class="contact-dialog-card">
+        <div class="contact-dialog-head">
+          <h2 id="contact-heading">Contact us</h2>
+          <button class="contact-close" type="button" popovertarget="contact-dialog" popovertargetaction="hide">Close</button>
+        </div>
+        <p>Have a question or want to learn more? Send us a message.</p>
+        <form class="contact-form" action="/contact" method="post">
+          <label><span>Name</span><input type="text" name="name" autocomplete="name" required maxlength="120"></label>
+          <label><span>Email</span><input type="email" name="email" autocomplete="email" required maxlength="200"></label>
+          <label><span>Message</span><textarea name="message" rows="6" required maxlength="4000"></textarea></label>
+          <button class="button" type="submit">Send message</button>
+        </form>
+      </div>
+    </div>
   </body>
 </html>`;
   const headers = new Headers({
@@ -239,6 +275,21 @@ async function handleJoin(request: Request, env: Env): Promise<Response> {
   );
 }
 
+const NO_MEMBER_ACCOUNT = "No approved member account matches that email yet.";
+
+async function handleLogin(request: Request): Promise<Response> {
+  const form = await readForm(request);
+  const email = form ? fieldValue(form, "email") : "";
+  const password = form ? fieldValue(form, "password") : "";
+  const submitted = EMAIL_PATTERN.test(email) && email.length <= 200 && password.trim().length > 0 && password.length <= 200;
+
+  if (!submitted) {
+    return documentPage(400, "Please enter your email and password.", "/login", "Return to sign in");
+  }
+
+  return documentPage(200, NO_MEMBER_ACCOUNT, "/login", "Return to sign in");
+}
+
 export default {
   async fetch(request, env): Promise<Response> {
     const method = request.method.toUpperCase();
@@ -263,6 +314,12 @@ export default {
       }
     }
 
+    if (url.pathname === "/login") {
+      if (method === "POST") {
+        return handleLogin(request);
+      }
+    }
+
     if (method !== "GET" && method !== "HEAD") {
       return text("Method not allowed", 405, { Allow: "GET, HEAD" });
     }
@@ -283,7 +340,14 @@ export default {
     }
 
     const response = withSecurityHeaders(asset);
-    if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/join" || url.pathname === "/join.html") {
+    if (
+      url.pathname === "/" ||
+      url.pathname === "/index.html" ||
+      url.pathname === "/join" ||
+      url.pathname === "/join.html" ||
+      url.pathname === "/login" ||
+      url.pathname === "/login.html"
+    ) {
       response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
     }
     if (method === "HEAD") {

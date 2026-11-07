@@ -117,7 +117,7 @@ img {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;
+  flex: none;
 }
 
 .brand-mark,
@@ -138,6 +138,7 @@ img {
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .brand-name span {
@@ -153,12 +154,17 @@ img {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 28px;
+  gap: 16px;
   font-size: 15px;
 }
 
 .nav > a:not(.button) {
   display: none;
+}
+
+.nav > a.nav-login {
+  display: inline;
+  font-weight: 600;
 }
 
 .button {
@@ -522,6 +528,35 @@ h1 {
   margin-top: 16px;
 }
 
+.sign-in {
+  padding: 56px 0 88px;
+}
+
+.sign-in-inner {
+  max-width: 460px;
+}
+
+.sign-in h1 {
+  margin: 14px 0 16px;
+  font-size: 46px;
+  letter-spacing: -0.02em;
+}
+
+.sign-in p {
+  max-width: 28em;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+.sign-in .text-link {
+  display: inline-block;
+  margin-top: 14px;
+}
+
+.sign-in .contact-form {
+  margin-top: 32px;
+}
+
 .contact-form {
   display: grid;
   gap: 18px;
@@ -653,6 +688,10 @@ a:focus-visible,
     font-size: 11px;
     letter-spacing: 0.22em;
     margin-bottom: 6px;
+  }
+
+  .nav {
+    gap: 28px;
   }
 
   .nav > a:not(.button) {
@@ -901,18 +940,36 @@ a:focus-visible,
   }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 520px) {
+  .header-inner {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding-bottom: 14px;
+  }
+
+  .nav {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 420px) {
   .brand-name {
     font-size: 15px;
   }
 
   .brand-mark {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .nav {
+    gap: 12px;
   }
 
   .nav .button {
     padding: 9px 10px;
+    font-size: 13px;
   }
 
   h1 {
