@@ -27,8 +27,8 @@
         <nav class="nav" aria-label="Main navigation">
           <a href="#about">About</a>
           <a href="#issues">Issues</a>
-          <a href="#issues">News</a>
-          <a href="#issues">Calendar</a>
+          <a href="#">News</a>
+          <a href="#">Calendar</a>
           <a class="button" href="#join">Join the mission</a>
         </nav>
       </div>
@@ -193,6 +193,27 @@
         <div class="footer-top">
           <p class="closing">A Unified Voice. A Stronger Industry. A Better Walton County.</p>
         </div>
+        <section class="contact" id="contact" aria-labelledby="contact-heading">
+          <div class="contact-intro">
+            <h2 id="contact-heading">Contact us</h2>
+            <p>Have a question or want to learn more?<br>Send us a message.</p>
+          </div>
+          <form class="contact-form" action="/contact" method="post">
+            <label>
+              <span>Name</span>
+              <input type="text" name="name" autocomplete="name" required maxlength="120">
+            </label>
+            <label>
+              <span>Email</span>
+              <input type="email" name="email" autocomplete="email" required maxlength="200">
+            </label>
+            <label>
+              <span>Message</span>
+              <textarea name="message" rows="6" required maxlength="4000"></textarea>
+            </label>
+            <button class="button" type="submit">Send message</button>
+          </form>
+        </section>
         <div class="footer-bottom">
           <span>Walton County Builders Network · Walton County, Florida</span>
         </div>
