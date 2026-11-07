@@ -449,6 +449,32 @@ h1 {
   letter-spacing: 0.03em;
 }
 
+.footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.facebook-link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--gold);
+}
+
+.facebook-link svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
+.facebook-link:hover {
+  color: var(--gold-hover);
+}
+
 .footer-top .button {
   width: 100%;
   margin-top: 22px;
