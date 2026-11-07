@@ -443,20 +443,83 @@ h1 {
   letter-spacing: 0.03em;
 }
 
-.contact {
-  padding: 12px 0 40px;
+.footer-top .button {
+  width: 100%;
+  margin-top: 22px;
+  text-align: center;
 }
 
-.contact-intro h2 {
+.contact-dialog {
+  width: min(640px, calc(100% - 32px));
+  max-height: min(760px, calc(100% - 32px));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  overflow: auto;
+}
+
+.contact-dialog::backdrop {
+  background: rgba(0, 24, 64, 0.48);
+}
+
+.contact-dialog-card {
+  padding: 32px 28px 28px;
+  background: var(--cream);
+  border-top: 2px solid var(--gold);
+}
+
+.contact-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.contact-dialog h2 {
   font-size: 36px;
   line-height: 1.08;
 }
 
-.contact-intro p {
-  max-width: 24em;
-  margin-top: 14px;
+.contact-dialog-card > p {
+  max-width: 36em;
+  margin-top: 12px;
   font-size: 17px;
+  line-height: 1.5;
+}
+
+.contact-close {
+  flex: none;
+  margin: 0;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  font: 600 14px/1 "Source Sans 3", Arial, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.application {
+  padding: 48px 0 64px;
+}
+
+.application-intro h1 {
+  max-width: 11em;
+  margin: 14px 0 18px;
+  font-size: 42px;
+  letter-spacing: -0.02em;
+}
+
+.application-intro p {
+  max-width: 34em;
+  font-size: 18px;
   line-height: 1.55;
+}
+
+.application-intro p + p {
+  margin-top: 16px;
 }
 
 .contact-form {
@@ -513,6 +576,13 @@ h1 {
   line-height: 1.08;
 }
 
+.notice p {
+  max-width: 28em;
+  margin-top: 18px;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
 .notice .text-link {
   display: inline-block;
   margin-top: 28px;
@@ -526,8 +596,7 @@ a:focus-visible,
 
 #about,
 #issues,
-#join,
-#contact {
+#join {
   scroll-margin-top: calc(var(--header-height) + 18px);
 }
 
@@ -720,8 +789,13 @@ a:focus-visible,
   }
 
   .footer-top {
-    align-items: flex-start;
+    align-items: center;
     padding-bottom: 34px;
+  }
+
+  .footer-top .button {
+    width: auto;
+    margin-top: 0;
   }
 
   .footer-bottom {
@@ -730,27 +804,25 @@ a:focus-visible,
     padding-top: 20px;
   }
 
-  .contact {
+  .application-inner {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 72px;
-    padding: 8px 0 56px;
   }
 
-  .contact-intro {
-    width: 36%;
-    max-width: 380px;
+  .application-intro {
+    width: 40%;
   }
 
-  .contact-intro h2 {
-    font-size: 44px;
+  .application-intro h1 {
+    font-size: 52px;
   }
 
-  .contact-form {
-    width: 54%;
+  .application-form {
+    width: 52%;
     max-width: 560px;
-    margin-top: 4px;
+    margin-top: 0;
   }
 }
 

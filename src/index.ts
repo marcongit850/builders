@@ -30,6 +30,8 @@ function isPreviewAsset(pathname: string): boolean {
   return (
     pathname === "/" ||
     pathname === "/index.html" ||
+    pathname === "/join" ||
+    pathname === "/join.html" ||
     pathname === "/styles.css" ||
     pathname.startsWith("/fonts/") ||
     pathname.startsWith("/assets/")
@@ -43,13 +45,28 @@ function fieldValue(form: FormData, name: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function documentPage(status: number, heading: string, linkHref: string, linkLabel: string): Response {
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function documentPage(
+  status: number,
+  heading: string,
+  linkHref: string,
+  linkLabel: string,
+  detail?: string,
+): Response {
+  const detailHtml = detail ? `<p>${escapeHtml(detail)}</p>` : "";
   const html = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${heading} | Walton County Builders Network</title>
+    <title>${escapeHtml(heading)} | Walton County Builders Network</title>
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#f6f3ec">
     <link rel="icon" href="/assets/walton-county-builders-network-logo.jpg" type="image/jpeg">
@@ -66,8 +83,9 @@ function documentPage(status: number, heading: string, linkHref: string, linkLab
     </header>
     <main class="notice">
       <div class="container">
-        <h1>${heading}</h1>
-        <a class="text-link" href="${linkHref}">${linkLabel}</a>
+        <h1>${escapeHtml(heading)}</h1>
+        ${detailHtml}
+        <a class="text-link" href="${escapeHtml(linkHref)}">${escapeHtml(linkLabel)}</a>
       </div>
     </main>
   </body>
@@ -79,35 +97,146 @@ function documentPage(status: number, heading: string, linkHref: string, linkLab
   return withSecurityHeaders(new Response(html, { status, headers }));
 }
 
-async function handleContact(request: Request): Promise<Response> {
-  let form: FormData;
+function validWebsite(value: string): boolean {
+  if (!value) return true;
+  if (value.length > 200 || /\s/.test(value)) return false;
   try {
-    form = await request.formData();
+    const url = new URL(value.includes("://") ? value : `https://${value}`);
+    return url.hostname.includes(".");
   } catch {
+    return false;
+  }
+}
+
+function validPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  return value.length <= 40 && digits.length >= 7 && digits.length <= 15;
+}
+
+async function readForm(request: Request): Promise<FormData | null> {
+  try {
+    return await request.formData();
+  } catch {
+    return null;
+  }
+}
+
+async function deliver(env: Env, subject: string, replyTo: string, text: string): Promise<boolean> {
+  try {
+    await env.EMAIL.send({
+      to: env.CONTACT_TO,
+      from: { name: "Walton County Builders Network", email: env.EMAIL_FROM },
+      replyTo,
+      subject,
+      text,
+    });
+    return true;
+  } catch (error) {
+    const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "unknown";
+    console.error(JSON.stringify({ message: "email send failed", subject, code }));
+    return false;
+  }
+}
+
+function contactBody(name: string, email: string, message: string): string {
+  return [`Name: ${name}`, `Email: ${email}`, "", "Message:", message].join("\n");
+}
+
+async function handleContact(request: Request, env: Env): Promise<Response> {
+  const form = await readForm(request);
+  const name = form ? fieldValue(form, "name") : "";
+  const email = form ? fieldValue(form, "email") : "";
+  const message = form ? fieldValue(form, "message") : "";
+  const valid =
+    name.length > 0 &&
+    name.length <= 120 &&
+    EMAIL_PATTERN.test(email) &&
+    email.length <= 200 &&
+    message.length > 0 &&
+    message.length <= 4000;
+
+  if (!valid) {
     return documentPage(
       400,
       "Please enter your name, a valid email address, and a message.",
-      "/#contact",
-      "Return to the form",
+      "/",
+      "Return to the homepage",
     );
   }
 
-  const name = fieldValue(form, "name");
-  const email = fieldValue(form, "email");
-  const message = fieldValue(form, "message");
-  const complete = name.length > 0 && email.length > 0 && message.length > 0 && EMAIL_PATTERN.test(email);
-  const withinLimits = name.length <= 120 && email.length <= 200 && message.length <= 4000;
-
-  if (!complete || !withinLimits) {
-    return documentPage(
-      400,
-      "Please enter your name, a valid email address, and a message.",
-      "/#contact",
-      "Return to the form",
-    );
+  const sent = await deliver(env, "Builders Network contact", email, contactBody(name, email, message));
+  if (!sent) {
+    return documentPage(502, "We could not send your message. Please try again.", "/", "Return to the homepage");
   }
 
   return documentPage(200, "Thank you for getting in touch.", "/", "Return to the homepage");
+}
+
+function shown(value: string): string {
+  return value || "Not provided";
+}
+
+async function handleJoin(request: Request, env: Env): Promise<Response> {
+  const form = await readForm(request);
+  const name = form ? fieldValue(form, "name") : "";
+  const email = form ? fieldValue(form, "email") : "";
+  const phone = form ? fieldValue(form, "phone") : "";
+  const company = form ? fieldValue(form, "company") : "";
+  const role = form ? fieldValue(form, "role") : "";
+  const industry = form ? fieldValue(form, "industry") : "";
+  const waltonTime = form ? fieldValue(form, "walton_time") : "";
+  const website = form ? fieldValue(form, "website") : "";
+  const note = form ? fieldValue(form, "note") : "";
+  const required = [name, company, role, industry, waltonTime];
+  const valid =
+    required.every((value) => value.length > 0 && value.length <= 160) &&
+    name.length <= 120 &&
+    EMAIL_PATTERN.test(email) &&
+    email.length <= 200 &&
+    validPhone(phone) &&
+    validWebsite(website) &&
+    note.length <= 4000;
+
+  if (!valid) {
+    return documentPage(
+      400,
+      "Please complete the required fields. Use a valid email address and phone number. Leave the website blank, or enter a valid address.",
+      "/join",
+      "Return to the application",
+    );
+  }
+
+  const text = [
+    `Full name: ${name}`,
+    `Email: ${email}`,
+    `Phone: ${phone}`,
+    `Business or company: ${company}`,
+    `Role at your company: ${role}`,
+    `Industry or type of work: ${industry}`,
+    `How long in Walton County: ${waltonTime}`,
+    `Business website: ${shown(website)}`,
+    "",
+    "Who you are, or why you want to join:",
+    shown(note),
+  ].join("\n");
+
+  const sent = await deliver(env, "Builders Network membership application", email, text);
+  if (!sent) {
+    return documentPage(
+      502,
+      "We could not submit your application. Please try again.",
+      "/join",
+      "Return to the application",
+    );
+  }
+
+  return documentPage(
+    200,
+    "Thank you for applying.",
+    "/",
+    "Return to the homepage",
+    "Your application will be reviewed.",
+  );
 }
 
 export default {
@@ -117,15 +246,21 @@ export default {
 
     if (url.pathname === "/contact") {
       if (method === "POST") {
-        return handleContact(request);
+        return handleContact(request, env);
       }
       if (method === "GET" || method === "HEAD") {
         return new Response(null, {
           status: 303,
-          headers: { Location: new URL("/#contact", url).toString() },
+          headers: { Location: new URL("/", url).toString() },
         });
       }
       return text("Method not allowed", 405, { Allow: "POST" });
+    }
+
+    if (url.pathname === "/join") {
+      if (method === "POST") {
+        return handleJoin(request, env);
+      }
     }
 
     if (method !== "GET" && method !== "HEAD") {
@@ -148,7 +283,7 @@ export default {
     }
 
     const response = withSecurityHeaders(asset);
-    if (url.pathname === "/" || url.pathname === "/index.html") {
+    if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/join" || url.pathname === "/join.html") {
       response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
     }
     if (method === "HEAD") {

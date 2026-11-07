@@ -6,6 +6,17 @@ compatibility_flags = ["nodejs_compat"]
 upload_source_maps = true
 
 # Preview worker only. Do not add a route, custom domain, or another worker name.
+# Email uses the Workers send_email binding. It does not enable Email Routing
+# and it does not change MX records. The from address must already belong to
+# a domain onboarded to Cloudflare Email Service.
+
+[[send_email]]
+name = "EMAIL"
+destination_address = "marc@whpinc.com"
+
+[vars]
+EMAIL_FROM = "builders-network@whpinc.com"
+CONTACT_TO = "marc@whpinc.com"
 
 [assets]
 directory = "./public"
