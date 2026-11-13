@@ -1,0 +1,20 @@
+name = "builders-preview"
+main = "src/index.js"
+compatibility_date = "2026-11-07"
+
+# Updates the existing builders-preview worker. Custom domains are already
+# attached. Do not add a route or a second worker name.
+
+[[send_email]]
+name = "EMAIL"
+destination_address = "marc@whpinc.com"
+
+[observability]
+enabled = true
+
+[observability.logs]
+head_sampling_rate = 1
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
