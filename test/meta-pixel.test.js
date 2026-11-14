@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const src = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
-const PIXEL_ID = "1453385293438640";
+const PIXEL_ID = "1181294521002723";
 
 const PIXEL = `<script>
 !function(f,b,e,v,n,t,s)
@@ -14,10 +14,10 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1453385293438640');
+fbq('init', '1181294521002723');
 fbq('track', 'PageView');
 </script>
-<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1453385293438640&ev=PageView&noscript=1"/></noscript>`;
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1181294521002723&ev=PageView&noscript=1"/></noscript>`;
 
 const CSP =
   "default-src 'none'; script-src 'self' 'unsafe-inline' https://*.googletagmanager.com https://*.google-analytics.com https://connect.facebook.net; img-src 'self' https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.facebook.com https://connect.facebook.net; form-action 'self'; base-uri 'none'";
@@ -62,16 +62,16 @@ test("homepage head includes the Meta Pixel base code after the existing GA4 tag
 });
 
 test("other pages do not include the Meta Pixel", () => {
-  for (const name of ["JOIN", "THANKS_JOIN", "THANKS_CONTACT", "LOGIN"]) {
+  for (const name of ["JOIN", "THANKS_CONTACT", "LOGIN"]) {
     const html = readStringConst(name);
     assert.equal(html.includes("fbq("), false, name);
     assert.equal(html.includes("fbevents.js"), false, name);
     assert.equal(html.includes("facebook.com/tr"), false, name);
     assert.equal(html.includes(PIXEL_ID), false, name);
   }
-  assert.equal(src.split("fbq(").length - 1, 2);
-  assert.equal(src.split("fbevents.js").length - 1, 1);
-  assert.equal(src.split("facebook.com/tr").length - 1, 1);
+  assert.equal(src.split("fbq(").length - 1, 5);
+  assert.equal(src.split("fbevents.js").length - 1, 2);
+  assert.equal(src.split("facebook.com/tr").length - 1, 2);
 });
 
 test("GA4 remains on the pages that already had it", () => {
@@ -87,4 +87,11 @@ test("content security policy allows the pixel and still allows GA4", () => {
   assert.ok(CSP.includes("'unsafe-inline'"));
   assert.ok(CSP.includes("https://connect.facebook.net"));
   assert.ok(CSP.includes("https://www.facebook.com"));
+});
+
+test("membership thank-you page has the pixel base code and fires Lead after it", () => {
+  const t = readStringConst("THANKS_JOIN");
+  assert.ok(t.includes("fbevents.js") && t.includes(PIXEL_ID));
+  assert.ok(t.indexOf("fbq('track', 'Lead');") > t.indexOf("fbq('track', 'PageView');"));
+  assert.ok(t.indexOf("fbq('track', 'Lead');") < t.indexOf("</body>"));
 });
