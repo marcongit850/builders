@@ -59,9 +59,9 @@ test("applications and login URLs are built from the hub origin", () => {
     hubApplicationsUrl("https://waltonleaders.org/api/hub/applications"),
     "https://waltonleaders.org/api/hub/applications"
   );
-  assert.equal(hubLoginUrl("https://waltonleaders.org"), "https://waltonleaders.org/login");
-  assert.equal(hubLoginUrl(""), "https://waltonleaders.org/login");
-  assert.equal(hubLoginUrl("not a url"), "https://waltonleaders.org/login");
+  assert.equal(hubLoginUrl("https://waltonleaders.org"), "https://waltonleaders.org/login/builders");
+  assert.equal(hubLoginUrl(""), "https://waltonleaders.org/login/builders");
+  assert.equal(hubLoginUrl("not a url"), "https://waltonleaders.org/login/builders");
 });
 
 test("payload keeps every original form field as a string", () => {
@@ -380,18 +380,18 @@ test("login page and header Login link send members to the hub", async () => {
   const ctx = { waitUntil() {} };
   const login = await worker.fetch(new Request("https://waltonbuildersnetwork.org/login"), env, ctx);
   assert.equal(login.status, 302);
-  assert.equal(login.headers.get("Location"), "https://waltonleaders.org/login");
+  assert.equal(login.headers.get("Location"), "https://waltonleaders.org/login/builders");
 
   const posted = await worker.fetch(new Request("https://waltonbuildersnetwork.org/login", {
     method: "POST",
     body: new URLSearchParams({ email: "ada@example.com", password: "secret" }),
   }), env, ctx);
   assert.equal(posted.status, 302);
-  assert.equal(posted.headers.get("Location"), "https://waltonleaders.org/login");
+  assert.equal(posted.headers.get("Location"), "https://waltonleaders.org/login/builders");
 
   const htmlLogin = await worker.fetch(new Request("https://waltonbuildersnetwork.org/login.html"), env, ctx);
   assert.equal(htmlLogin.status, 302);
-  assert.equal(htmlLogin.headers.get("Location"), "https://waltonleaders.org/login");
+  assert.equal(htmlLogin.headers.get("Location"), "https://waltonleaders.org/login/builders");
 
   const www = await worker.fetch(new Request("http://www.waltonbuildersnetwork.org/login"), env, ctx);
   assert.equal(www.status, 301);
@@ -399,8 +399,8 @@ test("login page and header Login link send members to the hub", async () => {
 
   const home = await worker.fetch(new Request("https://waltonbuildersnetwork.org/"), env, ctx);
   const html = await home.text();
-  assert.match(html, /href="https:\/\/waltonleaders.org\/login">Login</);
-  assert.match(html, /class="nav-login-bar" href="https:\/\/waltonleaders.org\/login">Login</);
-  assert.match(html, /href="\/login">Sign in</);
+  assert.match(html, /href="https:\/\/waltonleaders.org\/login\/builders">Login</);
+  assert.match(html, /class="nav-login-bar" href="https:\/\/waltonleaders.org\/login\/builders">Login</);
+  assert.match(html, /href="https:\/\/waltonleaders.org\/login\/builders">Sign in</);
   assert.equal(html.includes('action="/login"'), false);
 });
