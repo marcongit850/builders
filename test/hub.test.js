@@ -41,6 +41,10 @@ test("hub URL var is the leaders origin and observability stays in place", () =>
     wrangler,
     /\[observability\]\nenabled = true\n\n\[observability\.logs\]\nhead_sampling_rate = 1\n\n\[observability\.traces\]\nenabled = true\nhead_sampling_rate = 1\n/
   );
+  assert.match(
+    wrangler,
+    /\[\[send_email\]\]\nname = "EMAIL"\ndestination_address = "marc@whpinc.com"\nallowed_sender_addresses = \["hello@waltonbuildersnetwork.org"\]\n/
+  );
   assert.equal(wrangler.includes("[[routes]]"), false);
   assert.equal(wrangler.includes("HUB_INGEST_KEY ="), false);
   assert.equal(/[\u2013\u2014]/.test(wrangler), false);
@@ -240,8 +244,8 @@ test("a valid join emails Marc and forwards to the hub without waiting on it", a
     assert.equal(response.headers.get("Location"), "https://waltonbuildersnetwork.org/received?for=join");
     assert.equal(emails.length, 1);
     assert.equal(emails[0].to, "marc@whpinc.com");
-    assert.equal(emails[0].from, "marc@2911studio.com");
-    assert.match(emails[0].raw, /From: Walton County Builders Network <marc@2911studio.com>/);
+    assert.equal(emails[0].from, "hello@waltonbuildersnetwork.org");
+    assert.match(emails[0].raw, /From: Walton County Builders Network <hello@waltonbuildersnetwork.org>/);
     assert.match(emails[0].raw, /Reply-To: ada@example.com/);
     assert.match(emails[0].raw, /Subject: Builders Network membership application/);
     const body = [

@@ -8,6 +8,7 @@ compatibility_date = "2026-11-07"
 [[send_email]]
 name = "EMAIL"
 destination_address = "marc@whpinc.com"
+allowed_sender_addresses = ["hello@waltonbuildersnetwork.org"]
 
 # Hub origin. Valid join applications are posted to /api/hub/applications.
 # HUB_INGEST_KEY is a Worker secret (wrangler secret put). It is not stored here.
