@@ -39,7 +39,7 @@ test("every header page has a menu button and a visible Login link", () => {
     const page = withHeaderNav(html);
     assert.match(page, /<button type="button" class="nav-toggle" aria-expanded="false" aria-controls="nav-menu">/, name);
     assert.match(page, /<span class="nav-toggle-text">Menu<\/span>/, name);
-    assert.match(page, /<a class="nav-login-bar" href="https:\/\/waltonleaders.org\/login">Login<\/a>/, name);
+    assert.match(page, /<a class="nav-login-bar" href="https:\/\/waltonleaders.org\/login\/builders">Login<\/a>/, name);
     assert.match(page, /id="nav-menu"/, name);
     assert.equal(page.includes("onclick="), false, name);
     assert.equal((page.match(/id="nav-mobile"/g) || []).length, 1, name);
@@ -51,13 +51,13 @@ test("every header page has a menu button and a visible Login link", () => {
 
 test("home menu links stay on the page and other pages point back to home sections", () => {
   const home = readStringConst("HOME");
-  assert.match(home, /<div class="nav-menu" id="nav-menu">\s*<a href="#about">About<\/a>\s*<a href="#issues">Issues<\/a>\s*<a href="https:\/\/waltonleaders.org\/login">Login<\/a>/);
-  assert.match(home, /<a class="button" href="\/login">Sign in<\/a>/);
+  assert.match(home, /<div class="nav-menu" id="nav-menu">\s*<a href="#about">About<\/a>\s*<a href="#issues">Issues<\/a>\s*<a href="https:\/\/waltonleaders.org\/login\/builders">Login<\/a>/);
+  assert.match(home, /<a class="button" href="https:\/\/waltonleaders.org\/login\/builders">Sign in<\/a>/);
   for (const name of ["JOIN", "THANKS_JOIN", "THANKS_CONTACT", "LOGIN"]) {
     const html = readStringConst(name);
     assert.match(html, /<a href="\/#about">About<\/a>/, name);
     assert.match(html, /<a href="\/#issues">Issues<\/a>/, name);
-    assert.match(html, /<a href="https:\/\/waltonleaders.org\/login">Login<\/a>/, name);
+    assert.match(html, /<a href="https:\/\/waltonleaders.org\/login\/builders">Login<\/a>/, name);
   }
 });
 

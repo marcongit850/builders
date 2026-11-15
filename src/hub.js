@@ -3,7 +3,7 @@
 
 export const HUB_NETWORK = "builders";
 export const HUB_TIMEOUT_MS = 4000;
-const HUB_LOGIN_FALLBACK = "https://waltonleaders.org/login";
+const HUB_LOGIN_FALLBACK = "https://waltonleaders.org/login/builders";
 
 function usableHubUrl(hubUrl) {
   if (typeof hubUrl !== "string") return "";
@@ -21,7 +21,7 @@ function usableHubUrl(hubUrl) {
 export function hubLoginUrl(hubUrl) {
   const url = usableHubUrl(hubUrl);
   if (!url) return HUB_LOGIN_FALLBACK;
-  url.pathname = "/login";
+  url.pathname = "/login/builders";
   url.search = "";
   url.hash = "";
   return url.toString();
