@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "node --check src/index.js && node --check src/hub.js",
+    "check": "node --check src/index.js && node --check src/hub.js && node --check src/why-we-exist.js",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
