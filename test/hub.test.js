@@ -7,6 +7,7 @@ import {
   hubApplicationsUrl,
   hubLoginUrl,
   joinApplicationPayload,
+  normalizeReferralCode,
   scheduleHubForward,
 } from "../src/hub.js";
 
@@ -79,6 +80,7 @@ test("payload keeps every original form field as a string", () => {
     email: "ada@example.com",
     submitted_at: "2026-11-15T13:45:00.000Z",
     source_url: "https://waltonbuildersnetwork.org/join",
+    ref: "",
     fields: {
       name: " Ada\nLovelace ",
       email: "ada@example.com",
@@ -275,6 +277,7 @@ test("a valid join emails Marc and forwards to the hub without waiting on it", a
     assert.equal(sent.source_url, "https://waltonbuildersnetwork.org/join");
     assert.equal(sent.fields.name, "Ada\r\nLovelace");
     assert.equal(sent.fields.company_fax, "");
+    assert.equal(sent.ref, "");
     assert.equal(Number.isNaN(Date.parse(sent.submitted_at)), false);
     assert.equal(logs.length, 0);
   } finally {
@@ -370,6 +373,126 @@ test("email failure does not forward and still shows the try again page", async 
     assert.equal(response.status, 200);
     assert.match(await response.text(), /We could not send that just now/);
     assert.equal(fetched, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("payload sets top-level ref from the form", () => {
+  const form = joinForm({ ref: " KMNP2345 " });
+  const payload = joinApplicationPayload({
+    name: "Ada Lovelace",
+    email: "ada@example.com",
+    sourceUrl: "https://waltonbuildersnetwork.org/join",
+    form,
+    submittedAt: "2026-11-15T13:45:00.000Z",
+  });
+  assert.equal(payload.ref, " KMNP2345 ");
+  assert.equal(payload.fields.ref, " KMNP2345 ");
+  assert.equal(form.get("ref"), payload.ref);
+});
+
+test("referral codes stay inside the invite alphabet", () => {
+  assert.equal(normalizeReferralCode(" ABCD2345 "), "abcd2345");
+  assert.equal(normalizeReferralCode("abcdefgu"), "abcdefgu");
+  assert.equal(normalizeReferralCode("abci2345"), "");
+  assert.equal(normalizeReferralCode("abcdl345"), "");
+  assert.equal(normalizeReferralCode("abcdo345"), "");
+  assert.equal(normalizeReferralCode("abcd0345"), "");
+  assert.equal(normalizeReferralCode("abcd1345"), "");
+  assert.equal(normalizeReferralCode("abcd234"), "");
+  assert.equal(normalizeReferralCode("abcd23450"), "");
+  assert.equal(normalizeReferralCode(""), "");
+  assert.equal(normalizeReferralCode(null), "");
+  const hubSrc = readFileSync(new URL("../src/hub.js", import.meta.url), "utf8");
+  const indexSrc = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
+  assert.equal(/[\u2013\u2014]/.test(hubSrc), false);
+  assert.equal(/[\u2013\u2014]/.test(indexSrc), false);
+  assert.match(indexSrc, /escapeHtml\(normalizeReferralCode\(ref\)\)/);
+  assert.match(indexSrc, /url\.searchParams\.get\("ref"\)/);
+});
+
+function formSlice(html, className) {
+  const start = html.indexOf(`class="${className}"`);
+  assert.ok(start >= 0, className);
+  const end = html.indexOf("</form>", start);
+  assert.ok(end > start, className);
+  return html.slice(start, end);
+}
+
+test("join pages keep a personal invite ref on the apply form only", async () => {
+  const env = {};
+  const ctx = { waitUntil() {} };
+
+  const plain = await worker.fetch(new Request("https://waltonbuildersnetwork.org/join"), env, ctx);
+  const plainHtml = await plain.text();
+  assert.match(formSlice(plainHtml, "apply-form"), /<input type="hidden" name="ref" value="">/);
+  assert.equal(formSlice(plainHtml, "contact-form").includes('name="ref"'), false);
+  assert.equal(plainHtml.split('name="ref"').length - 1, 1);
+  assert.equal(plain.headers.get("Cache-Control"), "no-store");
+  assert.equal(plain.headers.get("Vary"), null);
+
+  const page = await worker.fetch(new Request("https://waltonbuildersnetwork.org/join?ref=%20ABCD2345%20"), env, ctx);
+  const html = await page.text();
+  assert.match(formSlice(html, "apply-form"), /<input type="hidden" name="ref" value="abcd2345">/);
+  assert.equal(formSlice(html, "contact-form").includes('name="ref"'), false);
+  assert.equal(html.split('name="ref"').length - 1, 1);
+  assert.equal(page.headers.get("Cache-Control"), "no-store");
+  assert.equal(page.headers.get("Vary"), "*");
+  assert.equal(/[\u2013\u2014]/.test(html), false);
+
+  const other = await worker.fetch(new Request("https://waltonbuildersnetwork.org/join.html?ref=efgh6789"), env, ctx);
+  const otherHtml = await other.text();
+  assert.match(formSlice(otherHtml, "apply-form"), /<input type="hidden" name="ref" value="efgh6789">/);
+  assert.equal(formSlice(otherHtml, "contact-form").includes('name="ref"'), false);
+  assert.equal(other.headers.get("Cache-Control"), "no-store");
+  assert.equal(other.headers.get("Vary"), "*");
+  assert.equal(html.includes("efgh6789"), false);
+  assert.equal(otherHtml.includes("abcd2345"), false);
+
+  const rejected = ["abci2345", "abcdl345", "abcdo345", "abcd0345", "abcd1345", "abcd234", "abcd23450", "abcd2345\"><script>"];
+  for (const bad of rejected) {
+    const res = await worker.fetch(new Request(`https://waltonbuildersnetwork.org/join?ref=${encodeURIComponent(bad)}`), env, ctx);
+    const body = await res.text();
+    assert.match(formSlice(body, "apply-form"), /<input type="hidden" name="ref" value="">/, bad);
+    assert.equal(formSlice(body, "apply-form").includes(bad), false, bad);
+    assert.equal(res.headers.get("Cache-Control"), "no-store");
+    assert.equal(res.headers.get("Vary"), "*");
+  }
+
+  const head = await worker.fetch(new Request("https://waltonbuildersnetwork.org/join?ref=abcd2345", { method: "HEAD" }), env, ctx);
+  assert.equal(head.status, 200);
+  assert.equal(await head.text(), "");
+  assert.equal(head.headers.get("Cache-Control"), "no-store");
+  assert.equal(head.headers.get("Vary"), "*");
+
+  const headPlain = await worker.fetch(new Request("https://waltonbuildersnetwork.org/join.html", { method: "HEAD" }), env, ctx);
+  assert.equal(headPlain.status, 200);
+  assert.equal(await headPlain.text(), "");
+  assert.equal(headPlain.headers.get("Vary"), null);
+});
+
+test("a posted join forwards the form ref and leaves the email unchanged", async () => {
+  const emails = [];
+  const hubCalls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    hubCalls.push({ url, init });
+    return new Response("ok", { status: 200 });
+  };
+  const jobs = [];
+  try {
+    const response = await postJoin(mailEnv(emails), {
+      waitUntil(promise) { jobs.push(promise); },
+    }, joinForm({ ref: " KMNP2345 " }));
+    assert.equal(response.status, 303);
+    await Promise.all(jobs);
+    assert.equal(emails.length, 1);
+    assert.equal(emails[0].raw.includes("KMNP2345"), false);
+    const sent = JSON.parse(hubCalls[0].init.body);
+    assert.equal(sent.ref, " KMNP2345 ");
+    assert.equal(sent.fields.ref, " KMNP2345 ");
+    assert.equal(sent.ref, joinForm({ ref: " KMNP2345 " }).get("ref"));
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -36,20 +36,37 @@ export function hubApplicationsUrl(hubUrl) {
   return url.toString();
 }
 
+const REF_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+
+export function normalizeReferralCode(value) {
+  const code = String(value ?? "").trim().toLowerCase();
+  if (code.length !== 8) return "";
+  for (const char of code) {
+    if (!REF_ALPHABET.includes(char)) return "";
+  }
+  return code;
+}
+
+function stringField(value) {
+  return typeof value === "string" ? value : value == null ? "" : String(value);
+}
+
 export function joinApplicationPayload({ name, email, sourceUrl, form, submittedAt }) {
   const fields = {};
   if (form && typeof form.entries === "function") {
     for (const [key, value] of form.entries()) {
       if (Object.prototype.hasOwnProperty.call(fields, key)) continue;
-      fields[key] = typeof value === "string" ? value : value == null ? "" : String(value);
+      fields[key] = stringField(value);
     }
   }
+  const ref = form && typeof form.get === "function" ? stringField(form.get("ref")) : "";
   return {
     network: HUB_NETWORK,
     name: String(name),
     email: String(email),
     submitted_at: submittedAt,
     source_url: String(sourceUrl),
+    ref,
     fields,
   };
 }
